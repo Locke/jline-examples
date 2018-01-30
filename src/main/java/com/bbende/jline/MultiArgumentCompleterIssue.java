@@ -1,24 +1,25 @@
 package com.bbende.jline;
 
-import org.jline.builtins.Completers;
 import org.jline.reader.Completer;
 import org.jline.reader.EndOfFileException;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.ParsedLine;
 import org.jline.reader.UserInterruptException;
+import org.jline.reader.impl.completer.AggregateCompleter;
+import org.jline.reader.impl.completer.ArgumentCompleter;
+import org.jline.reader.impl.completer.StringsCompleter;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-public class FileCompleterIssue {
+public class MultiArgumentCompleterIssue {
 
-    public static final String SHELL_NAME = "file-completer-issue";
+    public static final String SHELL_NAME = "multi-arg-completer-issue";
     public static final String PROMPT = "#> ";
 
     public static void main(String[] args) throws IOException {
@@ -30,34 +31,27 @@ public class FileCompleterIssue {
                 .build();
              PrintStream output = new PrintStream(terminal.output(), true)) {
 
-            // list of top-level nodes for tree completer
-            List<Completers.TreeCompleter.Node> rootNodes = new ArrayList<>();
+            // cmd1 -argA argAvalue -argB argBvalue -argC argCvalue
+            StringsCompleter cmd1Completer = new StringsCompleter("cmd1");
+            StringsCompleter cmd1ArgsCompleter = new StringsCompleter("-argA", "-argB", "-argC");
+            ArgumentCompleter cmd1ArgumentCompleter = new ArgumentCompleter(cmd1Completer, cmd1ArgsCompleter);
 
-            // create a node for each command (cmd1, cmd2, cmd3
-            for (int i=1; i <= 3; i++) {
-                List<Object> nodeObjects = new ArrayList<>();
-                nodeObjects.add("cmd" + i);
+            // cmd2 -argX argXvalue -argY argYvalue -argZ argZvalue
+            StringsCompleter cmd2Completer = new StringsCompleter("cmd2");
+            StringsCompleter cmd2ArgsCompleter = new StringsCompleter("-argX", "-argY", "-argZ");
+            ArgumentCompleter cmd2ArgumentCompleter = new ArgumentCompleter(cmd2Completer, cmd2ArgsCompleter);
 
-                // create a file name completer and a node for the completer
-                Completer fileNameCompleter = new Completers.FileNameCompleter();
-                Completers.TreeCompleter.Node fileNameNode = new Completers.TreeCompleter.Node(fileNameCompleter, Collections.emptyList());
+            // combine completers for cmd1 and cmd2
+            List<Completer> completers = new ArrayList<>();
+            completers.add(cmd1ArgumentCompleter);
+            completers.add(cmd2ArgumentCompleter);
 
-                // create a node for the -f argument with the file name completer node as a child
-                Completers.TreeCompleter.Node optionNode = Completers.TreeCompleter.node("-f", fileNameNode);
-                nodeObjects.add(optionNode);
-
-                // add the overall command node to the root nodes
-                Object[] nodeObjectsArray = nodeObjects.toArray(new Object[nodeObjects.size()]);
-                rootNodes.add(Completers.TreeCompleter.node(nodeObjectsArray));
-            }
-
-            // create the top-level completer
-            Completer completer = new Completers.TreeCompleter(rootNodes);
+            AggregateCompleter aggregateCompleter = new AggregateCompleter(completers);
 
             LineReader reader = LineReaderBuilder.builder()
                     .appName(SHELL_NAME)
                     .terminal(terminal)
-                    .completer(completer)
+                    .completer(aggregateCompleter)
                     .build();
 
             reader.setOpt(LineReader.Option.AUTO_FRESH_LINE);
