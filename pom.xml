@@ -48,12 +48,12 @@
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline</artifactId>
-            <version>3.5.2</version>
+            <version>3.6.1</version>
         </dependency>
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-terminal-jna</artifactId>
-            <version>3.5.2</version>
+            <version>3.6.1</version>
         </dependency>
     </dependencies>
 
